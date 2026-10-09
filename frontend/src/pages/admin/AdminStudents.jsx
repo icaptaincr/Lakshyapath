@@ -1,0 +1,14 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, Button, Container, Flex, Heading, Input, Table, Text } from "@chakra-ui/react";
+import { FiArrowLeft, FiSearch } from "react-icons/fi";
+import api from "../../services/api";
+
+function AdminStudents() {
+  const navigate = useNavigate(); const [students,setStudents]=useState([]); const [search,setSearch]=useState(""); const [loading,setLoading]=useState(true); const [error,setError]=useState("");
+  const load=async()=>{try{setLoading(true);const r=await api.get(`/admin/students?search=${encodeURIComponent(search)}`);setStudents(r.data.students||[])}catch(e){setError(e.response?.data?.message||"Unable to load students.")}finally{setLoading(false)}};
+  useEffect(()=>{load()},[]);
+  const status=async s=>{try{await api.patch(`/admin/students/${s._id}/status`,{isActive:!s.isActive});await load()}catch(e){setError(e.response?.data?.message||"Unable to update student status.")}};
+  return <Box minH="100vh" bg="khaki.50"><Box bg="brand.900" color="white" borderBottom="4px solid" borderColor="gold.500"><Container maxW="1280px"><Flex minH="82px" align="center" justify="space-between"><Box><Text fontSize="xs" fontWeight="800" color="gold.300">LAKSHYAPATH ADMIN</Text><Heading>Student Management</Heading></Box><Button variant="outline" borderColor="gold.400" color="gold.300" onClick={()=>navigate("/admin/dashboard")}><FiArrowLeft/><Text ml={2}>Dashboard</Text></Button></Flex></Container></Box><Container maxW="1280px" py={10}>{error&&<Box mb={5} p={4} bg="red.50" borderRadius="lg"><Text color="red.700">{error}</Text></Box>}<Flex gap={3} mb={6}><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, email or phone" bg="white"/><Button onClick={load} bg="brand.700" color="white"><FiSearch/><Text ml={2}>Search</Text></Button></Flex>{loading?<Text>Loading students...</Text>:<Box bg="white" borderRadius="xl" overflowX="auto"><Table.Root size="sm"><Table.Header><Table.Row><Table.ColumnHeader>Name</Table.ColumnHeader><Table.ColumnHeader>Email</Table.ColumnHeader><Table.ColumnHeader>Phone</Table.ColumnHeader><Table.ColumnHeader>Qualification</Table.ColumnHeader><Table.ColumnHeader>Status</Table.ColumnHeader><Table.ColumnHeader>Action</Table.ColumnHeader></Table.Row></Table.Header><Table.Body>{students.map(s=><Table.Row key={s._id}><Table.Cell>{s.fullName}</Table.Cell><Table.Cell>{s.email}</Table.Cell><Table.Cell>{s.phone}</Table.Cell><Table.Cell>{s.highestQualification}</Table.Cell><Table.Cell>{s.isActive?"Active":"Inactive"}</Table.Cell><Table.Cell><Button size="xs" variant="outline" onClick={()=>status(s)}>{s.isActive?"Deactivate":"Activate"}</Button></Table.Cell></Table.Row>)}</Table.Body></Table.Root></Box>}</Container></Box>
+}
+export default AdminStudents;
