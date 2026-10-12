@@ -1,10 +1,11 @@
+
 import { Center, Spinner } from "@chakra-ui/react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute() {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -19,12 +20,23 @@ function ProtectedRoute() {
     );
   }
 
+  // Send unauthenticated users to the common login page.
   if (!isAuthenticated) {
     return (
       <Navigate
         to="/login"
         replace
         state={{ from: location.pathname }}
+      />
+    );
+  }
+
+  // Prevent admins from entering student-only pages.
+  if (user?.role !== "student") {
+    return (
+      <Navigate
+        to="/admin/dashboard"
+        replace
       />
     );
   }

@@ -1,11 +1,23 @@
 import { Navigate, Outlet } from "react-router-dom";
 
 function AdminProtectedRoute() {
-  const token = localStorage.getItem("lakshyapath_admin_token");
-  const admin = localStorage.getItem("lakshyapath_admin_user");
+  const token = localStorage.getItem("lakshyapath_token");
+  const savedUser = localStorage.getItem("lakshyapath_user");
 
-  if (!token || !admin) {
-    return <Navigate to="/admin/login" replace />;
+  let user = null;
+
+  try {
+    user = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    user = null;
+  }
+
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role !== "admin") {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

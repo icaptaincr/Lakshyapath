@@ -1,6 +1,8 @@
+
 import { useEffect, useState } from "react";
-import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+
+import api from "../../services/api";
 
 import {
   Box,
@@ -20,8 +22,6 @@ import {
   FiHelpCircle,
   FiCreditCard,
   FiHome,
-  FiUsers,
-  FiDollarSign,
 } from "react-icons/fi";
 
 function AdminDashboard() {
@@ -29,25 +29,52 @@ function AdminDashboard() {
 
   const [stats, setStats] = useState(null);
 
-  useEffect(() => {
-    api.get("/admin/dashboard").then((response) => setStats(response.data.stats)).catch((error) => console.error("Admin dashboard stats error:", error));
-  }, []);
-
+  // Read the admin from the common authentication session.
   const [admin] = useState(() => {
     try {
       return JSON.parse(
-        localStorage.getItem("lakshyapath_admin_user")
+        localStorage.getItem("lakshyapath_user")
       );
     } catch {
       return null;
     }
   });
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchStats = async () => {
+      try {
+        const response = await api.get("/admin/dashboard");
+
+        if (active) {
+          setStats(response.data.stats);
+        }
+      } catch (error) {
+        console.error(
+          "Admin dashboard stats error:",
+          error
+        );
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Use the common logout flow for both account types.
   const handleLogout = () => {
+    localStorage.removeItem("lakshyapath_token");
+    localStorage.removeItem("lakshyapath_user");
+
+    // Remove any legacy admin session keys.
     localStorage.removeItem("lakshyapath_admin_token");
     localStorage.removeItem("lakshyapath_admin_user");
 
-    navigate("/admin/login");
+    navigate("/login", { replace: true });
   };
 
   const cards = [
@@ -80,12 +107,12 @@ function AdminDashboard() {
       action: () => navigate("/admin/tests"),
     },
     {
-  title: "Plans & Pricing",
-  description:
-    "Manage premium plans, pricing and festive offers.",
-  icon: FiCreditCard,
-  action: () => navigate("/admin/plans"),
-},
+      title: "Plans & Pricing",
+      description:
+        "Manage premium plans, pricing and festive offers.",
+      icon: FiCreditCard,
+      action: () => navigate("/admin/plans"),
+    },
     {
       title: "Home Content",
       description:
@@ -103,10 +130,7 @@ function AdminDashboard() {
   ];
 
   return (
-    <Box
-      minH="100vh"
-      bg="khaki.50"
-    >
+    <Box minH="100vh" bg="khaki.50">
       {/* Header */}
       <Box
         bg="brand.900"
@@ -168,30 +192,54 @@ function AdminDashboard() {
             Welcome, {admin?.fullName || "Admin"}
           </Heading>
 
-          <Text
-            color="charcoal.500"
-            mt={2}
-          >
-            Manage LakshyaPath preparation content and student notifications.
+          <Text color="charcoal.500" mt={2}>
+            Manage LakshyaPath preparation content and
+            student notifications.
           </Text>
         </Box>
 
+        {/* Dashboard statistics */}
         {stats && (
-          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={4} mb={8}>
+          <Grid
+            templateColumns={{
+              base: "1fr",
+              sm: "repeat(2, 1fr)",
+              lg: "repeat(4, 1fr)",
+            }}
+            gap={4}
+            mb={8}
+          >
             {[
               ["Students", stats.students],
               ["Premium Active", stats.premiumSubscriptions],
               ["Test Attempts", stats.attempts],
               ["Revenue", `₹${stats.revenue}`],
             ].map(([label, value]) => (
-              <Box key={label} bg="white" border="1px solid" borderColor="khaki.200" borderRadius="xl" p={5}>
-                <Text fontSize="xs" color="charcoal.500">{label}</Text>
-                <Heading mt={1} fontSize="2xl" color="brand.900">{value}</Heading>
+              <Box
+                key={label}
+                bg="white"
+                border="1px solid"
+                borderColor="khaki.200"
+                borderRadius="xl"
+                p={5}
+              >
+                <Text fontSize="xs" color="charcoal.500">
+                  {label}
+                </Text>
+
+                <Heading
+                  mt={1}
+                  fontSize="2xl"
+                  color="brand.900"
+                >
+                  {value ?? 0}
+                </Heading>
               </Box>
             ))}
           </Grid>
         )}
 
+        {/* Admin management cards */}
         <Grid
           templateColumns={{
             base: "1fr",

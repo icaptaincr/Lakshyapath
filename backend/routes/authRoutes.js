@@ -1,8 +1,9 @@
+
 import express from "express";
+
 import {
   registerStudent,
   loginStudent,
-  loginAdmin,
   getStudentProfile,
 } from "../controllers/authController.js";
 
@@ -13,10 +14,13 @@ import {
 
 const router = express.Router();
 
+// Public routes
 router.post("/register", registerStudent);
-router.post("/login", loginStudent);
-router.post("/admin-login", loginAdmin);
 
+// Common login for students and admins
+router.post("/login", loginStudent);
+
+// Student-only profile route
 router.get(
   "/profile",
   verifyToken,

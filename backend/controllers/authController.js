@@ -138,9 +138,8 @@ export const loginStudent = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await User.findOne({
-      email: normalizedEmail,
-      role: "student",
-    });
+  email: normalizedEmail,
+});
 
     if (!user) {
       return res.status(401).json({

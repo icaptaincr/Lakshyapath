@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 const api = axios.create({
@@ -7,19 +8,13 @@ const api = axios.create({
   },
 });
 
+// Attach the common JWT token to authenticated requests.
 api.interceptors.request.use(
   (config) => {
-    const studentToken = localStorage.getItem(
-      "lakshyapath_token"
-    );
-
-    const adminToken = localStorage.getItem(
-      "lakshyapath_admin_token"
-    );
-
-    const token = adminToken || studentToken;
+    const token = localStorage.getItem("lakshyapath_token");
 
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
