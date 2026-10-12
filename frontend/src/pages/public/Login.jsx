@@ -1,3 +1,4 @@
+
 import {
   Box,
   Button,
@@ -9,6 +10,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -25,13 +27,13 @@ function Login() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (error) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [error]);
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -44,10 +46,9 @@ function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     setError("");
 
-    if (!formData.email || !formData.password) {
+    if (!formData.email.trim() || !formData.password) {
       setError("Please enter your email and password.");
       return;
     }
@@ -55,23 +56,29 @@ function Login() {
     try {
       setLoading(true);
 
-      // Clear any previous admin session
-      // so student requests always use the student JWT.
-      localStorage.removeItem("lakshyapath_admin_token");
-      localStorage.removeItem("lakshyapath_admin_user");
-
-      await login(
+      // Use the common login endpoint for both roles.
+      const response = await login(
         formData.email.trim().toLowerCase(),
         formData.password
       );
 
-      navigate("/dashboard", { replace: true });
+      const role = response?.user?.role;
+
+      // Redirect according to the authenticated user's role.
+      if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (role === "student") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        throw new Error("Unrecognized account role.");
+      }
     } catch (error) {
-      console.error("STUDENT LOGIN ERROR:", error);
+      console.error("LOGIN ERROR:", error);
 
       const message =
         error.response?.data?.message ||
-        "Unable to login. Please check your credentials.";
+        error.message ||
+        "Unable to log in. Please check your credentials.";
 
       setError(message);
     } finally {
@@ -146,7 +153,7 @@ function Login() {
             </Text>
           </Flex>
 
-          {/* Login Form */}
+          {/* Common Login Form */}
           <Flex
             flex="1"
             p={{ base: 8, md: 12 }}
@@ -161,13 +168,10 @@ function Login() {
                     fontSize="2xl"
                     mb={2}
                   >
-                    Student Login
+                    Login to LakshyaPath
                   </Heading>
 
-                  <Text
-                    color="charcoal.500"
-                    fontSize="sm"
-                  >
+                  <Text color="charcoal.500" fontSize="sm">
                     Sign in to continue to your LakshyaPath account.
                   </Text>
                 </Box>
@@ -181,10 +185,7 @@ function Login() {
                     px={4}
                     py={3}
                   >
-                    <Text
-                      color="red.700"
-                      fontSize="sm"
-                    >
+                    <Text color="red.700" fontSize="sm">
                       {error}
                     </Text>
                   </Box>
@@ -208,12 +209,13 @@ function Login() {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="Enter your email"
+                        autoComplete="username"
+                        required
                         size="lg"
                         borderColor="khaki.300"
                         _focus={{
                           borderColor: "brand.600",
-                          boxShadow:
-                            "0 0 0 1px #3D5636",
+                          boxShadow: "0 0 0 1px #3D5636",
                         }}
                       />
                     </Box>
@@ -234,12 +236,13 @@ function Login() {
                         value={formData.password}
                         onChange={handleChange}
                         placeholder="Enter your password"
+                        autoComplete="current-password"
+                        required
                         size="lg"
                         borderColor="khaki.300"
                         _focus={{
                           borderColor: "brand.600",
-                          boxShadow:
-                            "0 0 0 1px #3D5636",
+                          boxShadow: "0 0 0 1px #3D5636",
                         }}
                       />
                     </Box>
@@ -251,6 +254,7 @@ function Login() {
                       color="white"
                       loading={loading}
                       loadingText="Signing in..."
+                      disabled={loading}
                       _hover={{
                         bg: "brand.800",
                         transform: "translateY(-1px)",
@@ -275,23 +279,6 @@ function Login() {
                     }}
                   >
                     Create Account
-                  </Link>
-                </Text>
-
-                <Text
-                  textAlign="center"
-                  fontSize="xs"
-                  color="charcoal.400"
-                >
-                  Admin?{" "}
-                  <Link
-                    to="/admin/login"
-                    style={{
-                      color: "#526B48",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Admin Login
                   </Link>
                 </Text>
               </VStack>
