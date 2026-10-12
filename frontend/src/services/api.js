@@ -7,8 +7,6 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-// Attach the common JWT token to authenticated requests.
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("lakshyapath_token");
