@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
 
   // Common login for both students and admins.
   const login = async (email, password) => {
-    const response = await api.post("/auth/login", {
+    const response = await api.post("http://localhost:5000/auth/login", {
       email,
       password,
     });
